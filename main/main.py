@@ -4,10 +4,15 @@ Captures audio from microphone and returns phoneme-level scores.
 """
 
 import azure.cognitiveservices.speech as speechsdk
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Azure credentials
-speech_key = "key"
-service_region = "eastus"
+speech_key = os.getenv('AZURE_KEY')
+service_region = os.getenv('AZURE_REGION', 'eastus')
 
 
 def assess_pronunciation_phonemes(target_word):

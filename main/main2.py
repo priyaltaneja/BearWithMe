@@ -8,16 +8,20 @@ import azure.cognitiveservices.speech as speechsdk
 from elevenlabs import ElevenLabs
 import tempfile
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # --- CONFIG --- #
 # Azure
-AZURE_KEY = "key"
-AZURE_REGION = "eastus"
+AZURE_KEY = os.getenv('AZURE_KEY')
+AZURE_REGION = os.getenv('AZURE_REGION', 'eastus')
 
 # ElevenLabs
-ELEVEN_API_KEY = "key"
-VOICE_ID = "EXAVITQu4vr4xnSDxMaL"
-THRESHOLD = 80  # phoneme score threshold
+ELEVEN_API_KEY = os.getenv('ELEVEN_API_KEY')
+VOICE_ID = os.getenv('VOICE_ID', 'EXAVITQu4vr4xnSDxMaL')
+THRESHOLD = int(os.getenv('THRESHOLD', '80'))  # phoneme score threshold
 
 # Feedback prompts
 PROMPTS = {
