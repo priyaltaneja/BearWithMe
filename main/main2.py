@@ -44,7 +44,7 @@ GOOGLE_HOME_IP = os.getenv('GOOGLE_HOME_IP', '')  # Optional: specify IP address
 PROMPTS = {
     "intro": "Let's practice the word {}.",
     "phoneme_practice": "Let's practice the sound {}.",
-    "repeat_phoneme": "Can you say {}?",
+    "repeat_phoneme": "That's not quite right, can you say ",
     "success_phoneme": "Nice! Much better!",
     "all_correct": "Great job! You pronounced all the sounds correctly."
 }
@@ -200,25 +200,42 @@ def speak(text):
 
 def azure_phoneme_to_text(phoneme):
     """
-    Convert Azure phonemes to lowercase, readable text for TTS.
-    Handles most English phonemes and strips stress numbers.
+    Convert Azure phonemes to TTS-friendly text.
+    Handles vowels, consonants, and extended single letters (a-z).
+    Strips stress numbers.
     """
-    # Remove stress numbers (e.g., AH0 -> ah)
-    base_phoneme = ''.join([c for c in phoneme if not c.isdigit()]).lower()
+    # Remove stress numbers (AH0 -> AH)
+    base = ''.join([c for c in phoneme if not c.isdigit()]).lower()
 
+    # Standard phoneme mapping
     mapping = {
-        # vowels and other consonants
-        "aa": "ah", "ae": "a", "ah": "uh", "ax": "uh", "ao": "aw",
-        "aw": "ow", "ay": "eye", "ch": "ch", "dh": "th",
-        "eh": "eh", "er": "er", "ey": "ay", "f": "f",
-        "g": "g", "hh": "h", "ih": "ih", "iy": "ee", "jh": "j",
-        "k": "k", "l": "l", "m": "m", "n": "n", "ng": "ng",
-        "ow": "oh", "oy": "oy", "p": "p", "r": "r", "s": "s",
-        "sh": "sh", "t": "t", "th": "th", "uh": "oo", "uw": "oo",
-        "v": "v", "w": "w", "y": "y", "z": "z", "zh": "zh", "axr": "er"
+        "aa": "ah","ae": "uh","ah": "uh","ax": "uh","ao": "aw",
+        "aw": "ow","ay": "eye","b": "b","ch": "ch","d": "d",
+        "dh": "th","eh": "eh","er": "er","ey": "ay","f": "f",
+        "g": "g","hh": "h","ih": "ih","iy": "ee","jh": "j",
+        "k": "k","l": "l","m": "m","n": "n","ng": "ng",
+        "ow": "oh","oy": "oy","p": "p","r": "r","s": "s",
+        "sh": "sh","t": "t","th": "th","uh": "oo","uw": "oo",
+        "v": "v","w": "w","y": "y","z": "z","zh": "zh","axr": "er"
     }
 
-    return mapping.get(base_phoneme, base_phoneme)
+    # Extended single-letter mapping (for TTS)
+    single_letter_mapping = {
+        "a": "ay", "b": "buh", "c": "cuh", "d": "duh", "e": "ee",
+        "f": "fuh", "g": "guh", "h": "heh", "i": "eye", "j": "juh",
+        "k": "kuh", "l": "luh", "m": "muh", "n": "nuh", "o": "oh",
+        "p": "puh", "q": "koo", "r": "ruh", "s": "suh", "t": "tuh",
+        "u": "oo", "v": "vuh", "w": "wuh", "x": "ex", "y": "yuh", "z": "zuh"
+    }
+
+    # First try standard mapping
+    text = mapping.get(base, base)
+
+    # If the result is a single letter, use extended TTS mapping
+    if len(text) == 1 and text in single_letter_mapping:
+        text = single_letter_mapping[text]
+
+    return text
 
 
 def assess_pronunciation_phonemes(target_word):
@@ -233,11 +250,12 @@ def assess_pronunciation_phonemes(target_word):
         granularity=speechsdk.PronunciationAssessmentGranularity.Phoneme,
         enable_miscue=True
     )
-
+    global i
     recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)
     pronunciation_config.apply_to(recognizer)
 
-    print(f"\n🎤 Say the word '{target_word}' now...")
+    speak(f"Please say the word {target_word} now.")
+
     result = recognizer.recognize_once_async().get()
 
     if result.reason != speechsdk.ResultReason.RecognizedSpeech:
@@ -266,9 +284,10 @@ def give_phoneme_feedback(word, phoneme_scores):
         if score < THRESHOLD:
             low_scores += 1
             readable = azure_phoneme_to_text(phoneme)
-            speak(PROMPTS["phoneme_practice"].format(readable))
+            speak(PROMPTS["repeat_phoneme"])
+            time.sleep(0.2)
             speak(readable)
-            speak(PROMPTS["repeat_phoneme"].format(readable))
+            time.sleep(0.5)
             speak(PROMPTS["success_phoneme"])
 
     if low_scores == 0:
@@ -277,16 +296,27 @@ def give_phoneme_feedback(word, phoneme_scores):
 
 
 def main():
-    target_word = "banana"
-    phoneme_scores = assess_pronunciation_phonemes(target_word)
 
-    if phoneme_scores:
+    target_word = "apple"
+
+    while True:
+        phoneme_scores = assess_pronunciation_phonemes(target_word)
+
+        if not phoneme_scores:
+
+            print("❌ Incorrect pronunciation, let's try again.")
+            continue
+
         print("\n📊 Phoneme-level scores:")
         for ph, sc in phoneme_scores.items():
             print(f"{ph}: {sc:.1f}%")
+
         give_phoneme_feedback(target_word, phoneme_scores)
-    else:
-        print("❌ Could not assess pronunciation.")
+
+        # If everything was correct, break the loop
+        if all(score >= THRESHOLD for score in phoneme_scores.values()):
+            break
+
 
 
 if __name__ == "__main__":
