@@ -1,3 +1,5 @@
+This project was for **Hack Western 2025**. See [DevPost](https://devpost.com/software/bear-with-me-pg9e02?ref_content=my-projects-tab&ref_feature=my_projects).
+
 ## Inspiration 🐻
 
 We all see the same pattern in young children: a need to guide pronunciation and expansion of vocabulary for young, developing minds. In today's world every solution involves more screen time. 
