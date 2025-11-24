@@ -1,4 +1,4 @@
-This project was for **Hack Western 2025**. See [DevPost](https://devpost.com/software/bear-with-me-pg9e02?ref_content=my-projects-tab&ref_feature=my_projects).
+This project was created during **Hack Western 2025**. See [DevPost](https://devpost.com/software/bear-with-me-pg9e02?ref_content=my-projects-tab&ref_feature=my_projects).
 
 ## Inspiration 🐻
 
